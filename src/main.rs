@@ -17,12 +17,9 @@ async fn main() {
         clear_background(BLACK);
 
 
-        draw_texture(
-            &world_inst.draw_texture.as_ref().unwrap().texture, // The texture to draw
-            0.0,  // X position on the screen
-            0.0,  // Y position on the screen
-            WHITE, // Color tint
-        );
+        if let Some(target) = &world_inst.draw_texture {
+            draw_texture(&target.texture, 0.0, 0.0, WHITE);
+        }
 
         next_frame().await;
     }

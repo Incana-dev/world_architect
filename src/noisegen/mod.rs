@@ -18,7 +18,7 @@ impl WorldNoiseMap {
 
 pub fn gen_elevation_map(seed: u32) -> WorldNoiseMap{
 
-    let scale = 6.0;
+    let scale = 12.0;
 
 
     let mut nm = WorldNoiseMap {
