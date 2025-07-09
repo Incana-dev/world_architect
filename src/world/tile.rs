@@ -57,6 +57,13 @@ impl Tile {
         };
 
     }
+
+    pub fn update_tile_type(&mut self) {
+        if self.elevation < WATER_LEVEL {
+                self.tile_type = TileType::Ocean;
+                self.update_color();
+            }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -64,6 +71,8 @@ pub enum TileType {
     Land,
     Ocean,
 }
+
+
 
 
 

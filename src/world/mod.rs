@@ -6,8 +6,9 @@ use std::ops::Index;
 use crate::world::tile::TileType;
 use crate::{world::tile::Tile};
 use crate::config::{self, *};
-use crate::noisegen::{self, gen_elevation_map};
+use crate::noisegen::{self, gen_elevation_map, gen_plate_map, WorldPlateMap};
 use macroquad::color::{Color, BLACK};
+use crate::noisegen::plate::*;
 
 use macroquad::prelude::*;
 use crate::noisegen::WorldNoiseMap;
@@ -37,11 +38,14 @@ impl World {
             draw_texture: None,
         };
 
-        world_inst.apply_heightmap();
-        world_inst.apply_water_level();
+        world_inst.generate_terrain();
+        
 
         world_inst
     }
+
+
+
 
     fn for_each_tile<F>(&mut self, mut operation: F)
         where
@@ -52,11 +56,51 @@ impl World {
             }
         }
 
-    fn apply_heightmap(&mut self){
-        let initial_heightmap = gen_elevation_map(config::WORLD_SEED as u32);
-        self.for_each_tile(|tile, index| {
-            let height = initial_heightmap.get_height_from_noisemap(index);
-            tile.elevation = height;
+fn generate_terrain(&mut self) {
+    // Perlin noise map
+    let base_elevation_map = gen_elevation_map(config::WORLD_SEED as u32);
+
+    // Voronoi/Worley based plates
+    let plate_map = gen_plate_map(config::WORLD_SEED as u32);
+
+    self.for_each_tile(|tile, index| {
+            // --- Start all calculations with f64 ---
+            // 1. Get the base height from Perlin noise.
+            let base_height = base_elevation_map.get_height_from_noisemap(index) as f64;
+
+            // 2. Get the plate type for this tile.
+            let plate_type = plate_map.get_plate_type(index);
+
+            // 3. Start with the base height and add modifiers.
+            let mut final_elevation = base_height;
+
+            // 4. Add elevation based on plate type.
+            if plate_type == TectonicPlateType::Continental {
+                final_elevation += 20.0;
+            } else {
+                // It's fine to go below zero here, we'll clamp later.
+                final_elevation -= 10.0;
+            }
+
+            // 5. Add mountains at plate boundaries.
+            let distance_to_edge = plate_map.get_distance_to_edge(index);
+            if distance_to_edge < config::MOUNTAIN_FORMATION_DISTANCE {
+                let mountain_factor = 1.0 - (distance_to_edge / config::MOUNTAIN_FORMATION_DISTANCE);
+                
+                // Squaring the factor makes the mountains rise steeply from the edge.
+                // A small factor (0.2) becomes much smaller (0.04), while a large
+                // factor (0.9) stays large (0.81), creating a sharp curve.
+                let mountain_bonus = config::MOUNTAIN_MAX_HEIGHT * mountain_factor.powf(2.0);
+
+                final_elevation += mountain_bonus;
+            }
+
+            // --- Final Step: Clamp and cast to u8 ---
+            // Clamp the final value to the valid 0-255 range before casting.
+            tile.elevation = final_elevation.clamp(0.0, 255.0) as u8;
+            
+            // Now that the final elevation is set, update the tile's type and color.
+            tile.update_tile_type();
             tile.update_color();
         });
     }
@@ -116,10 +160,7 @@ impl World {
 
         self.draw_texture = render_target_cam.render_target;
 
-        set_default_camera();
-
-
-        
+        set_default_camera();  
     }
 }
 
