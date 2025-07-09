@@ -1,4 +1,5 @@
-![image](https://github.com/user-attachments/assets/4a6552bd-51c8-4c88-b7ba-3f926c8aa727)
+![image](https://github.com/user-attachments/assets/715be171-bc6a-4683-bb57-06d03bb0f167)
+
 
 This is my attempt, still in progress, of making a fairly comprehensive world-generator for TTRPGs, or maybe a game, or maybe just for inspiration. The end goal is a detailed world with its own geography, biomes, sense of history both geological and anthropomorphic (good word).
 
